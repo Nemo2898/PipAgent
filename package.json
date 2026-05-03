@@ -1,0 +1,25 @@
+{
+  "name": "pipagent",
+  "version": "0.1.0",
+  "description": "文档驱动的无状态 Agent 流转模型",
+  "type": "module",
+  "bin": {
+    "pipagent": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.5"
+  }
+}
