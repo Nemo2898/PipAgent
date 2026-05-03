@@ -67,7 +67,17 @@ export async function runTask(requirement: string): Promise<TaskResult> {
 
       // TL 验收 — now with full context
       console.log(`\n[TL] 验收 ${subtask.id}...`);
-      const review = await reviewSubtask(subtask, devResultStr, toolCalls, workDir);
+      const { review, toolCalls: tlToolCalls } = await reviewSubtask(
+        subtask,
+        devResultStr,
+        toolCalls,
+        workDir,
+      );
+
+      // Log TL's review actions
+      for (const t of tlToolCalls) {
+        console.log(`  TL: ${t.name}(${JSON.stringify(t.args).slice(0, 60)})`);
+      }
 
       if (review.pass) {
         appendBlock(

@@ -50,7 +50,7 @@ export async function reviewSubtask(
   devResult: string,
   toolCalls: { name: string; args: Record<string, unknown>; result: string }[],
   workDir: string,
-): Promise<TLReview> {
+): Promise<{ review: TLReview; toolCalls: typeof toolCalls }> {
   const toolSummary =
     toolCalls.length > 0
       ? `\n\nDev 的工具调用:\n${toolCalls
@@ -77,18 +77,22 @@ export async function reviewSubtask(
     `对照 outcome 验收这个结果。pass 还是 fail？`,
   ].join("\n");
 
-  const { text } = await runAgent(TL_SYSTEM, input, {
+  const { text, toolCalls: tlToolCalls } = await runAgent(TL_SYSTEM, input, {
     enableTools: true,
     workDir,
   });
 
+  let review: TLReview;
   try {
-    return JSON.parse(extractJSON(text));
+    review = JSON.parse(extractJSON(text));
   } catch {
     if (text.toLowerCase().includes("pass") || devResult.startsWith("[done]"))
-      return { pass: true, next: subtask.id };
-    return { pass: false, reason: text.slice(0, 200), retry: subtask.id };
+      review = { pass: true, next: subtask.id };
+    else
+      review = { pass: false, reason: text.slice(0, 200), retry: subtask.id };
   }
+
+  return { review, toolCalls: tlToolCalls };
 }
 
 function extractJSON(raw: string): string {
