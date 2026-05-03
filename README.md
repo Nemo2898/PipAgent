@@ -38,7 +38,7 @@ PM session   新建 → 读用户需求 → 写 PipeTrace → 销毁
 TL session   新建 → 读 PipeTrace → 写分配 → 销毁
 Dev session  新建 → 读 PipeTrace → 写 done/undone → 销毁
 TL session   新建（又一个新 TL）→ 读 PipeTrace → 验收 → 销毁
-PM session   新建 → 读 PipeTrace → 汇总 → 销毁
+PM session   新建 → 读 PipeTrace → 汇总 → 保留
 ```
 
 **PipeTrace 是唯一的状态源。Agent 之间零共享上下文。**
