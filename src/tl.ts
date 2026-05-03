@@ -4,7 +4,10 @@ import { TL_SYSTEM } from "./prompts.js";
 export interface Subtask {
   id: string;
   title: string;
-  description: string;
+  goal: string;
+  approach: string;
+  outcome: string;
+  key_points?: string;
 }
 
 export interface TLDecompose {
@@ -28,7 +31,17 @@ export async function decomposeTask(
   try {
     return JSON.parse(extractJSON(text));
   } catch {
-    return { subtasks: [{ id: "st-1", title: pmTitle, description: pmIntent }] };
+    return {
+      subtasks: [
+        {
+          id: "st-1",
+          title: pmTitle,
+          goal: pmIntent,
+          approach: "由 Dev 自行决定",
+          outcome: pmIntent,
+        },
+      ],
+    };
   }
 }
 

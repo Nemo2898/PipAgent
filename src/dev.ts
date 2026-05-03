@@ -3,7 +3,7 @@ import { DEV_SYSTEM } from "./prompts.js";
 import { existsSync, readdirSync } from "fs";
 
 export async function executeSubtask(
-  subtask: { id: string; title: string; description: string },
+  subtask: { id: string; title: string; goal: string; approach: string; outcome: string; key_points?: string },
   workDir: string,
 ): Promise<string> {
   const existingFiles = existsSync(workDir)
@@ -20,10 +20,15 @@ export async function executeSubtask(
     "",
     `当前 subtask: ${subtask.id}`,
     `标题: ${subtask.title}`,
-    `描述: ${subtask.description}`,
+    `目标: ${subtask.goal}`,
+    `方法: ${subtask.approach}`,
+    `效果: ${subtask.outcome}`,
+    subtask.key_points ? `要点: ${subtask.key_points}` : "",
     "",
     "输出 [done] 或 [undone]。不要其他格式。",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const { text } = await runAgent(DEV_SYSTEM, input, {
     enableTools: true,

@@ -38,7 +38,13 @@ export async function runTask(requirement: string): Promise<TaskResult> {
     hash,
     pmTask.title,
     "TL — 任务拆解",
-    subtasks.map((s: Subtask) => `${s.id}: ${s.title}`).join("\n"),
+    subtasks
+      .map(
+        (s: Subtask) =>
+          `${s.id}: ${s.title}\n  目标: ${s.goal}\n  方法: ${s.approach}\n  效果: ${s.outcome}` +
+          (s.key_points ? `\n  要点: ${s.key_points}` : ""),
+      )
+      .join("\n\n"),
   );
   console.log(`  拆为 ${subtasks.length} 个 subtask:`);
   for (const s of subtasks) console.log(`    ${s.id}: ${s.title}`);
