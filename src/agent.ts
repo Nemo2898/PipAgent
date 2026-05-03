@@ -138,7 +138,7 @@ export async function runAgent(
   ];
 
   const toolCalls: AgentResult["toolCalls"] = [];
-  const maxSteps = 20;
+  const maxSteps = 30;
 
   for (let step = 0; step < maxSteps; step++) {
     const body: Record<string, unknown> = {

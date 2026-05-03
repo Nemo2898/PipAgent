@@ -5,7 +5,7 @@ import { existsSync, readdirSync } from "fs";
 export async function executeSubtask(
   subtask: { id: string; title: string; goal: string; approach: string; outcome: string; key_points?: string },
   workDir: string,
-): Promise<string> {
+): Promise<{ text: string; toolCalls: { name: string; args: Record<string, unknown>; result: string }[] }> {
   const existingFiles = existsSync(workDir)
     ? readdirSync(workDir, { recursive: true })
         .map((f) => String(f))
@@ -30,10 +30,10 @@ export async function executeSubtask(
     .filter(Boolean)
     .join("\n");
 
-  const { text } = await runAgent(DEV_SYSTEM, input, {
+  const { text, toolCalls } = await runAgent(DEV_SYSTEM, input, {
     enableTools: true,
     workDir,
   });
 
-  return text.trim();
+  return { text: text.trim(), toolCalls };
 }

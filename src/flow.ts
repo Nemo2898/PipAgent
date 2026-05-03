@@ -58,15 +58,16 @@ export async function runTask(requirement: string): Promise<TaskResult> {
     while (true) {
       attempt++;
       console.log(`\n[Dev] 执行 ${subtask.id} (第 ${attempt} 次)...`);
-      const devResult = await executeSubtask(subtask, workDir);
-      const isDone = devResult.startsWith("[done]");
-      console.log(`  ${isDone ? "✓" : "✗"} ${devResult.slice(0, 120)}`);
+      const { text: devResult, toolCalls } = await executeSubtask(subtask, workDir);
+      const devResultStr = devResult || "";
+      const isDone = devResultStr.startsWith("[done]");
+      console.log(`  ${isDone ? "✓" : "✗"} ${devResultStr.slice(0, 120)}`);
 
-      appendBlock(hash, pmTask.title, `Dev — ${subtask.id}`, devResult);
+      appendBlock(hash, pmTask.title, `Dev — ${subtask.id}`, devResultStr);
 
-      // TL 验收
+      // TL 验收 — now with full context
       console.log(`\n[TL] 验收 ${subtask.id}...`);
-      const review = await reviewSubtask(subtask.id, devResult);
+      const review = await reviewSubtask(subtask, devResultStr, toolCalls, workDir);
 
       if (review.pass) {
         appendBlock(

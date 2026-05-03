@@ -46,18 +46,48 @@ export async function decomposeTask(
 }
 
 export async function reviewSubtask(
-  subtaskId: string,
+  subtask: Subtask,
   devResult: string,
+  toolCalls: { name: string; args: Record<string, unknown>; result: string }[],
+  workDir: string,
 ): Promise<TLReview> {
-  const input = `当前 subtask: ${subtaskId}\nDev 的结果:\n${devResult.slice(0, 2000)}\n\n验收这个结果。pass 还是 fail？`;
-  const { text } = await runAgent(TL_SYSTEM, input);
+  const toolSummary =
+    toolCalls.length > 0
+      ? `\n\nDev 的工具调用:\n${toolCalls
+          .map(
+            (t) =>
+              `  ${t.name}(${JSON.stringify(t.args).slice(0, 80)}) → ${t.result.slice(0, 120)}`,
+          )
+          .join("\n")}`
+      : "";
+
+  const input = [
+    `当前 subtask: ${subtask.id}`,
+    `目标: ${subtask.goal}`,
+    `方法: ${subtask.approach}`,
+    `效果: ${subtask.outcome}`,
+    ``,
+    `Dev 的结果:`,
+    devResult.slice(0, 2000),
+    toolSummary,
+    ``,
+    `工作目录: ${workDir}`,
+    `你可以用 read_file 读取代码文件，用 bash ls 查看目录。`,
+    ``,
+    `对照 outcome 验收这个结果。pass 还是 fail？`,
+  ].join("\n");
+
+  const { text } = await runAgent(TL_SYSTEM, input, {
+    enableTools: true,
+    workDir,
+  });
 
   try {
     return JSON.parse(extractJSON(text));
   } catch {
     if (text.toLowerCase().includes("pass") || devResult.startsWith("[done]"))
-      return { pass: true, next: subtaskId };
-    return { pass: false, reason: text.slice(0, 200), retry: subtaskId };
+      return { pass: true, next: subtask.id };
+    return { pass: false, reason: text.slice(0, 200), retry: subtask.id };
   }
 }
 
