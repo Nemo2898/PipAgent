@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { existsSync, mkdirSync, readdirSync } from "fs";
+import { resolve } from "path";
 import { defineTask, summarizeTask } from "./pm.js";
 import { decomposeTask, reviewSubtask } from "./tl.js";
 import { executeSubtask } from "./dev.js";
@@ -17,6 +19,10 @@ export interface TaskResult {
 export async function runTask(requirement: string): Promise<TaskResult> {
   // 生成 hash
   const hash = createHash("sha256").update(requirement).digest("hex").slice(0, 8);
+
+  // 工作目录 
+  const workDir = resolve(process.cwd(), "test_project");
+  if (!existsSync(workDir)) mkdirSync(workDir, { recursive: true });
 
   // ── PM: 定义任务 ──
   console.log("\n[PM] 分析需求...");
@@ -46,7 +52,7 @@ export async function runTask(requirement: string): Promise<TaskResult> {
     while (true) {
       attempt++;
       console.log(`\n[Dev] 执行 ${subtask.id} (第 ${attempt} 次)...`);
-      const devResult = await executeSubtask(subtask);
+      const devResult = await executeSubtask(subtask, workDir);
       const isDone = devResult.startsWith("[done]");
       console.log(`  ${isDone ? "✓" : "✗"} ${devResult.slice(0, 120)}`);
 

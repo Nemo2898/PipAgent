@@ -63,26 +63,38 @@ const TOOLS = [
 async function executeTool(
   name: string,
   args: Record<string, unknown>,
+  workDir: string,
 ): Promise<string> {
-  const { readFileSync, writeFileSync, mkdirSync, existsSync } = await import(
-    "fs"
-  );
-  const { dirname } = await import("path");
+  const { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } =
+    await import("fs");
+  const { resolve, dirname } = await import("path");
   const { execSync } = await import("child_process");
+
+  const resolvePath = (p: string) =>
+    p.startsWith("/") ? p : resolve(workDir, p);
 
   switch (name) {
     case "read_file": {
-      const p = args.path as string;
-      if (!existsSync(p)) return `Error: file not found: ${p}`;
-      return readFileSync(p, "utf8");
+      try {
+        const full = resolvePath(args.path as string);
+        if (!existsSync(full)) return `Error: file not found: ${full}`;
+        if (statSync(full).isDirectory())
+          return `Error: ${full} is a directory. Use bash ls to list.`;
+        return readFileSync(full, "utf8");
+      } catch (e: unknown) {
+        return `Error: ${(e as Error).message}`;
+      }
     }
     case "write_file": {
-      const p = args.path as string;
-      const c = args.content as string;
-      const dir = dirname(p);
-      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-      writeFileSync(p, c, "utf8");
-      return `OK: wrote ${p} (${c.length} bytes)`;
+      try {
+        const full = resolvePath(args.path as string);
+        const dir = dirname(full);
+        if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+        writeFileSync(full, args.content as string, "utf8");
+        return `OK: wrote ${full} (${(args.content as string).length} bytes)`;
+      } catch (e: unknown) {
+        return `Error: ${(e as Error).message}`;
+      }
     }
     case "bash": {
       try {
@@ -90,6 +102,7 @@ async function executeTool(
           encoding: "utf8",
           timeout: 30000,
           maxBuffer: 1024 * 1024,
+          cwd: workDir,
         });
         return out || "(no output)";
       } catch (e: unknown) {
@@ -110,13 +123,14 @@ export interface AgentResult {
 export async function runAgent(
   systemPrompt: string,
   userInput: string,
-  options?: { enableTools?: boolean },
+  options?: { enableTools?: boolean; workDir?: string },
 ): Promise<AgentResult> {
   const cfg = loadConfig();
   const apiKey = getEnv("OPENAI_API_KEY", "");
   const baseUrl = cfg.base_url;
   const model = cfg.model;
   const enableTools = options?.enableTools ?? false;
+  const workDir = options?.workDir ?? process.cwd();
 
   const messages: Array<Record<string, unknown>> = [
     { role: "system", content: systemPrompt },
@@ -163,7 +177,7 @@ export async function runAgent(
 
       for (const tc of msg.tool_calls) {
         const args = JSON.parse(tc.function.arguments || "{}");
-        const result = await executeTool(tc.function.name, args);
+        const result = await executeTool(tc.function.name, args, workDir);
         toolCalls.push({
           name: tc.function.name,
           args,
